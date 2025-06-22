@@ -1,6 +1,7 @@
 # PeerZone 🌍
 
 Demo video link : https://youtu.be/_MQt16qJOPI
+
 ![WhatsApp Görsel 2025-06-22 saat 10 21 38_370f6083](https://github.com/user-attachments/assets/1b603fb6-e3c2-4071-ad3b-f4993fbc7575)
 
 A decentralized peer-to-peer marketplace for cross-border product delivery, built with React, TypeScript, and Stellar blockchain integration.
@@ -224,7 +225,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 
-
+Presentation Link : https://www.canva.com/design/DAGrE2g2sJ0/houQnZlrQHqt0yPoJpahzA/edit?utm_content=DAGrE2g2sJ0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
 ## 🙏 Acknowledgments
 
