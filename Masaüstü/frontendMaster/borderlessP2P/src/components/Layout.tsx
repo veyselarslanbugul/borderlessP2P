@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import BottomNav from './BottomNav';
+import TransactionApproval from './TransactionApproval';
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, Calendar, Plane, MessageCircle, Plus } from 'lucide-react';
@@ -91,6 +92,9 @@ const Layout = () => {
       
       {/* Bottom Navigation (Mobile Only) */}
       <BottomNav />
+      
+      {/* Transaction Approval Dialog */}
+      <TransactionApproval />
     </div>
   );
 };

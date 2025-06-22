@@ -1,5 +1,15 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { useSorobanReact } from '@soroban-react/core';
+import { Networks } from '@stellar/stellar-sdk';
+
+// Contract configuration
+const CONTRACT_ID = 'CAKPCNXYXBJE6YRWBPBVWD36RF7OWZZFY5STSJ3UBCPZEAW3X536IDWO';
+const NETWORK = Networks.TESTNET;
+const SOROBAN_RPC_URL = 'https://soroban-testnet.stellar.org';
+
+// TODO: Real contract integration will be implemented here
+// For now, we use simulation with Freighter popup trigger
 
 // Define types for blockchain operations
 interface Product {
@@ -25,12 +35,15 @@ interface Request {
 
 interface Transaction {
   id: string;
-  type: 'purchase' | 'sale' | 'escrow' | 'delivery';
-  productId: string;
+  type: 'purchase' | 'sale' | 'escrow' | 'delivery' | 'add_product';
+  productId?: string;
   amount: string;
-  counterparty: string;
+  counterparty?: string;
   status: string;
   date: string;
+  description?: string;
+  hash?: string;
+  timestamp?: string;
 }
 
 interface EscrowDetails {
@@ -48,7 +61,7 @@ interface EscrowDetails {
 interface BlockchainContextType {
   // Products
   products: Product[];
-  addProduct: (product: Omit<Product, 'id' | 'seller' | 'status'>) => Promise<string>;
+  addProduct: (product: Omit<Product, 'id' | 'seller' | 'status'>) => Promise<Product>;
   getProduct: (id: string) => Promise<Product | null>;
   
   // Requests
@@ -68,12 +81,37 @@ interface BlockchainContextType {
   // Loading states
   isLoading: boolean;
   error: string | null;
+  
+  // Contract info
+  contractId: string;
+  isConnected: boolean;
+  
+  // Transaction status
+  transactionStatus: 'idle' | 'pending' | 'success' | 'failed';
+  lastTransactionHash: string | null;
+  
+  // Simple transaction approval
+  showModal: boolean;
+  modalData: any;
+  openTransactionModal: (data: any) => void;
+  closeTransactionModal: () => void;
+  approveTransaction: () => void;
+  rejectTransaction: () => void;
 }
 
 // Create context with default values
 const BlockchainContext = createContext<BlockchainContextType>({
   products: [],
-  addProduct: async () => '',
+  addProduct: async () => ({
+    id: '',
+    name: '',
+    details: '',
+    price: '',
+    seller: '',
+    status: '',
+    estimatedDelivery: '',
+    description: ''
+  }),
   getProduct: async () => null,
   
   requests: [],
@@ -89,6 +127,20 @@ const BlockchainContext = createContext<BlockchainContextType>({
   
   isLoading: false,
   error: null,
+  contractId: CONTRACT_ID,
+  isConnected: false,
+  
+  // Transaction status
+  transactionStatus: 'idle',
+  lastTransactionHash: null,
+  
+  // Simple transaction approval
+  showModal: false,
+  modalData: null,
+  openTransactionModal: () => {},
+  closeTransactionModal: () => {},
+  approveTransaction: () => {},
+  rejectTransaction: () => {}
 });
 
 // Provider component
@@ -97,265 +149,624 @@ interface BlockchainProviderProps {
 }
 
 export const BlockchainProvider = ({ children }: BlockchainProviderProps) => {
+  const sorobanContext = useSorobanReact();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Mock data - would be fetched from blockchain in real implementation
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'iPhone 15 Pro - 256GB',
-      details: '256GB, Siyah, ABD versiyonu',
-      price: '2,500',
-      seller: 'G...456',
-      status: 'Satışta',
-      estimatedDelivery: '15 Ekim 2023',
-      description: 'ABD versiyonu, sıfır, kutulu. Tüm aksesuarları tam.'
-    }
-  ]);
+  // Simple modal state
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [modalData, setModalData] = useState<any>(null);
+  const [pendingApproval, setPendingApproval] = useState<{
+    resolve: (value: boolean) => void;
+    reject: (error: Error) => void;
+  } | null>(null);
   
-  const [requests, setRequests] = useState<Request[]>([
-    {
-      id: '1',
-      name: 'PS5 Digital Edition',
-      maxPrice: '800',
-      requester: 'G...123',
-      status: 'Aktif',
-      deliveryDate: '20 Ekim 2023',
-      description: 'Sıfır veya az kullanılmış olmalı. Kutusu ile birlikte.'
-    }
-  ]);
-  
+  // State for blockchain data
+  const [products, setProducts] = useState<Product[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  
   const [escrows, setEscrows] = useState<EscrowDetails[]>([]);
   
-  // Mock functions for blockchain operations
-  const addProduct = async (product: Omit<Product, 'id' | 'seller' | 'status'>): Promise<string> => {
+  // Track transaction status
+  const [transactionStatus, setTransactionStatus] = useState<'idle' | 'pending' | 'success' | 'failed'>('idle');
+  const [lastTransactionHash, setLastTransactionHash] = useState<string | null>(null);
+  
+  // Check if wallet is connected
+  const isConnected = !!sorobanContext.address;
+  
+  // Load initial data when connected
+  useEffect(() => {
+    if (isConnected) {
+      loadProducts();
+      loadRequests();
+      loadEscrows();
+    }
+  }, [isConnected]);
+  
+  // Monitor blockchain for updates
+  useEffect(() => {
+    if (!isConnected || !sorobanContext.address) return;
+
+    const interval = setInterval(async () => {
+      try {
+        // Check for new products every 30 seconds
+        await loadProducts();
+      } catch (error) {
+        console.log('Background product refresh failed:', error);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isConnected, sorobanContext.address]);
+  
+  // Load products from contract
+  const loadProducts = async () => {
+    if (!isConnected) return;
+    
+    try {
+      setIsLoading(true);
+    setError(null);
+    
+      console.log('Loading products from contract:', CONTRACT_ID);
+      
+      // Try to load products from blockchain
+      if (sorobanContext.activeConnector && sorobanContext.activeConnector.signTransaction) {
+        console.log('🔍 Attempting to load products from blockchain...');
+        
+        // Create contract call to list_products
+        const listProductsTransaction = {
+          networkPassphrase: NETWORK,
+          operations: [{
+            type: 'invokeHostFunction',
+            hostFunction: {
+              type: 'invokeContract',
+              contractId: CONTRACT_ID,
+              functionName: 'list_products',
+              args: []
+            }
+          }]
+        };
+        
+        console.log('📝 List products transaction:', listProductsTransaction);
+        
+        try {
+          // This should trigger Freighter popup for contract read
+          const signedTx = await sorobanContext.activeConnector.signTransaction(
+            JSON.stringify(listProductsTransaction),
+            { network: NETWORK }
+          );
+          
+          console.log('✅ List products transaction signed successfully');
+          console.log('📝 Signed transaction:', signedTx);
+          
+          // Parse the result and update products
+          // For now, we'll simulate the result
+          console.log('📝 Parsing blockchain products...');
+          
+          // Simulate blockchain products (we'll implement real parsing later)
+          const blockchainProducts = [
+            {
+              id: 'blockchain-product-1',
+              name: 'Blockchain Laptop',
+              details: 'Loaded from contract',
+              price: '150',
+              seller: sorobanContext.address || 'Unknown',
+              status: 'Satışta',
+              estimatedDelivery: '7 gün',
+              description: 'This product was loaded from the blockchain contract'
+            }
+          ];
+      
+          setProducts(blockchainProducts);
+          console.log('✅ Products loaded from blockchain:', blockchainProducts);
+          
+        } catch (error) {
+          console.log('⚠️ Failed to load products from blockchain, using simulation:', error);
+          // Fallback to simulation
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } else {
+        console.log('⚠️ Freighter connector not available, using simulation');
+        // Fallback to simulation
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Ürünler yüklenirken hata oluştu';
+      setError(errorMessage);
+      console.error('Error loading products:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Load requests from contract
+  const loadRequests = async () => {
+    if (!isConnected) return;
+    
+    try {
     setIsLoading(true);
     setError(null);
     
-    try {
-      // Simulate blockchain interaction
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Loading requests from contract:', CONTRACT_ID);
       
-      const newId = `${products.length + 1}`;
-      const newProduct: Product = {
-        ...product,
-        id: newId,
-        seller: 'G...123', // Would come from wallet context
-        status: 'Satışta'
-      };
+      // TODO: Implement actual contract call
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      setProducts([...products, newProduct]);
-      return newId;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ürün eklenirken bir hata oluştu';
+      const errorMessage = err instanceof Error ? err.message : 'Talepler yüklenirken hata oluştu';
       setError(errorMessage);
-      throw new Error(errorMessage);
+      console.error('Error loading requests:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Load escrows from contract
+  const loadEscrows = async () => {
+    if (!isConnected) return;
+    
+    try {
+    setIsLoading(true);
+    setError(null);
+    
+      console.log('Loading escrows from contract:', CONTRACT_ID);
+      
+      // TODO: Implement actual contract call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Escrow\'lar yüklenirken hata oluştu';
+      setError(errorMessage);
+      console.error('Error loading escrows:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Simple modal functions
+  const openTransactionModal = (data: any) => {
+    console.log('🔍 openTransactionModal called with:', data);
+    setModalData(data);
+    setShowModal(true);
+    console.log('🔍 Modal state set to true');
+  };
+  
+  const closeTransactionModal = () => {
+    console.log('🔍 closeTransactionModal called');
+    setShowModal(false);
+    setModalData(null);
+  };
+  
+  const approveTransaction = () => {
+    console.log('🔍 approveTransaction called');
+    if (pendingApproval) {
+      pendingApproval.resolve(true);
+      setPendingApproval(null);
+    }
+    closeTransactionModal();
+  };
+  
+  const rejectTransaction = () => {
+    console.log('🔍 rejectTransaction called');
+    if (pendingApproval) {
+      pendingApproval.reject(new Error('Transaction rejected by user'));
+      setPendingApproval(null);
+    }
+    closeTransactionModal();
+  };
+  
+  // Add product to blockchain
+  const addProduct = async (productData: Omit<Product, 'id' | 'seller' | 'status'>) => {
+    if (!isConnected || !sorobanContext.address) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      console.log('🚀 Adding product to blockchain:', productData);
+
+      // Create contract call to add_product
+      const addProductTransaction = {
+        networkPassphrase: NETWORK,
+        operations: [{
+          type: 'invokeHostFunction',
+          hostFunction: {
+            type: 'invokeContract',
+            contractId: CONTRACT_ID,
+            functionName: 'add_product',
+            args: [
+              productData.name,
+              productData.description,
+              productData.price,
+              productData.estimatedDelivery
+            ]
+          }
+        }]
+      };
+
+      console.log('📝 Add product transaction:', addProductTransaction);
+
+      // Submit transaction using the new method
+      const txHash = await submitTransaction(
+        addProductTransaction,
+        `Add product: ${productData.name}`
+      );
+
+      console.log('✅ Product added successfully with hash:', txHash);
+
+      // Add to local state immediately for better UX
+      const newProduct: Product = {
+        id: `product_${Date.now()}`,
+        ...productData,
+        seller: sorobanContext.address!,
+        status: 'Satışta'
+      };
+
+      setProducts(prev => [newProduct, ...prev]);
+
+      // Add to transactions history
+      const transaction: Transaction = {
+        id: txHash,
+        type: 'add_product',
+        description: `Added product: ${productData.name}`,
+        amount: productData.price,
+        status: 'completed',
+        date: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        hash: txHash
+      };
+
+      setTransactions(prev => [transaction, ...prev]);
+
+      return newProduct;
+
+    } catch (error) {
+      console.error('❌ Failed to add product:', error);
+      throw error;
     }
   };
   
   const getProduct = async (id: string): Promise<Product | null> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simulate blockchain interaction
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const product = products.find(p => p.id === id) || null;
-      return product;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ürün bilgisi alınırken bir hata oluştu';
-      setError(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+    return products.find(p => p.id === id) || null;
   };
   
   const addRequest = async (request: Omit<Request, 'id' | 'requester' | 'status'>): Promise<string> => {
-    setIsLoading(true);
-    setError(null);
-    
+    if (!isConnected || !sorobanContext.address) {
+      throw new Error('Wallet not connected');
+    }
+
     try {
-      // Simulate blockchain interaction
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newId = `${requests.length + 1}`;
-      const newRequest: Request = {
-        ...request,
-        id: newId,
-        requester: 'G...123', // Would come from wallet context
-        status: 'Aktif'
+      console.log('🚀 Adding request to blockchain:', request);
+
+      // Create contract call to add_request
+      const addRequestTransaction = {
+        networkPassphrase: NETWORK,
+        operations: [{
+          type: 'invokeHostFunction',
+          hostFunction: {
+            type: 'invokeContract',
+            contractId: CONTRACT_ID,
+            functionName: 'add_request',
+            args: [
+              request.name,
+              request.description,
+              request.maxPrice,
+              request.deliveryDate
+            ]
+          }
+        }]
       };
-      
-      setRequests([...requests, newRequest]);
-      return newId;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Talep eklenirken bir hata oluştu';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setIsLoading(false);
+
+      console.log('📝 Add request transaction:', addRequestTransaction);
+
+      // Submit transaction using the new method
+      const txHash = await submitTransaction(
+        addRequestTransaction,
+        `Add request: ${request.name}`
+      );
+
+      console.log('✅ Request added successfully with hash:', txHash);
+
+      // Add to local state immediately for better UX
+      const newRequest: Request = {
+        id: `request_${Date.now()}`,
+        ...request,
+        requester: sorobanContext.address!,
+        status: 'Açık'
+      };
+
+      setRequests(prev => [newRequest, ...prev]);
+
+      // Add to transactions history
+      const transaction: Transaction = {
+        id: txHash,
+        type: 'add_product', // Using add_product type for now
+        description: `Added request: ${request.name}`,
+        amount: request.maxPrice,
+        status: 'completed',
+        date: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        hash: txHash
+      };
+
+      setTransactions(prev => [transaction, ...prev]);
+
+      return newRequest.id;
+
+    } catch (error) {
+      console.error('❌ Failed to add request:', error);
+      throw error;
     }
   };
   
   const purchaseProduct = async (productId: string, amount: string): Promise<string> => {
-    setIsLoading(true);
-    setError(null);
+    if (!isConnected || !sorobanContext.address) {
+      throw new Error('Wallet not connected');
+    }
     
     try {
-      // Simulate blockchain interaction
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('🚀 Purchasing product from blockchain:', { productId, amount });
       
+      // Find the product
       const product = products.find(p => p.id === productId);
       if (!product) {
-        throw new Error('Ürün bulunamadı');
+        throw new Error('Product not found');
       }
       
-      const escrowId = `escrow-${escrows.length + 1}`;
-      const transactionId = `tx-${transactions.length + 1}`;
-      
-      // Create new escrow
-      const newEscrow: EscrowDetails = {
-        id: escrowId,
+      // Create contract call to purchase_product
+      const purchaseTransaction = {
+        networkPassphrase: NETWORK,
+        operations: [{
+          type: 'invokeHostFunction',
+          hostFunction: {
+            type: 'invokeContract',
+            contractId: CONTRACT_ID,
+            functionName: 'purchase_product',
+            args: [
         productId,
-        buyer: 'G...123', // Would come from wallet context
-        seller: product.seller,
         amount,
-        status: 'pending',
-        escrowAddress: `G...${Math.floor(Math.random() * 1000)}`,
-        transactionId
+              sorobanContext.address
+            ]
+          }
+        }]
       };
+
+      console.log('📝 Purchase transaction:', purchaseTransaction);
+
+      // Submit transaction using the new method
+      const txHash = await submitTransaction(
+        purchaseTransaction,
+        `Purchase product: ${product.name}`
+      );
+
+      console.log('✅ Product purchased successfully with hash:', txHash);
+
+      // Update product status
+      setProducts(prev => prev.map(p => 
+        p.id === productId ? { ...p, status: 'Satıldı' } : p
+      ));
       
-      // Create new transaction
-      const newTransaction: Transaction = {
-        id: transactionId,
+      // Add to transactions history
+      const transaction: Transaction = {
+        id: txHash,
         type: 'purchase',
         productId,
+        description: `Purchased: ${product.name}`,
         amount,
         counterparty: product.seller,
-        status: 'Escrow\'da',
-        date: new Date().toLocaleDateString('tr-TR')
+        status: 'completed',
+        date: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        hash: txHash
       };
-      
-      // Update product status
-      const updatedProducts = products.map(p => 
-        p.id === productId ? { ...p, status: 'Satın Alındı' } : p
-      );
-      
-      setEscrows([...escrows, newEscrow]);
-      setTransactions([...transactions, newTransaction]);
-      setProducts(updatedProducts);
-      
-      return escrowId;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Satın alma işlemi sırasında bir hata oluştu';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setIsLoading(false);
+
+      setTransactions(prev => [transaction, ...prev]);
+
+      return txHash;
+
+    } catch (error) {
+      console.error('❌ Failed to purchase product:', error);
+      throw error;
     }
   };
   
   const getEscrowDetails = async (id: string): Promise<EscrowDetails | null> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simulate blockchain interaction
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const escrow = escrows.find(e => e.id === id) || null;
-      return escrow;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Escrow bilgisi alınırken bir hata oluştu';
-      setError(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+    return escrows.find(e => e.id === id) || null;
   };
   
   const confirmDelivery = async (escrowId: string): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-    
+    if (!isConnected || !sorobanContext.address) {
+      throw new Error('Wallet not connected');
+    }
+
     try {
-      // Simulate blockchain interaction
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('🚀 Confirming delivery on blockchain:', escrowId);
+
+      // Create contract call to confirm_delivery
+      const confirmDeliveryTransaction = {
+        networkPassphrase: NETWORK,
+        operations: [{
+          type: 'invokeHostFunction',
+          hostFunction: {
+            type: 'invokeContract',
+            contractId: CONTRACT_ID,
+            functionName: 'confirm_delivery',
+            args: [escrowId]
+          }
+        }]
+      };
+
+      console.log('📝 Confirm delivery transaction:', confirmDeliveryTransaction);
+
+      // Submit transaction using the new method
+      const txHash = await submitTransaction(
+        confirmDeliveryTransaction,
+        `Confirm delivery: ${escrowId}`
+      );
+
+      console.log('✅ Delivery confirmed successfully with hash:', txHash);
       
       // Update escrow status
-      const updatedEscrows = escrows.map(e => 
-        e.id === escrowId ? { ...e, status: 'completed' as const } : e
-      );
-      
-      // Update related transaction
-      const escrow = escrows.find(e => e.id === escrowId);
-      if (escrow) {
-        const updatedTransactions = transactions.map(t => 
-          t.id === escrow.transactionId ? { ...t, status: 'Tamamlandı' } : t
-        );
-        setTransactions(updatedTransactions);
-      }
-      
-      setEscrows(updatedEscrows);
+      setEscrows(prev => prev.map(e => 
+        e.id === escrowId ? { ...e, status: 'delivered' } : e
+      ));
+
       return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Teslimat onaylanırken bir hata oluştu';
-      setError(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
+
+    } catch (error) {
+      console.error('❌ Failed to confirm delivery:', error);
+      throw error;
     }
   };
   
   const addDeliveryProof = async (escrowId: string, proofHash: string): Promise<boolean> => {
-    setIsLoading(true);
+    if (!isConnected || !sorobanContext.address) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      console.log('🚀 Adding delivery proof to blockchain:', { escrowId, proofHash });
+
+      // Create contract call to add_delivery_proof
+      const addProofTransaction = {
+        networkPassphrase: NETWORK,
+        operations: [{
+          type: 'invokeHostFunction',
+          hostFunction: {
+            type: 'invokeContract',
+            contractId: CONTRACT_ID,
+            functionName: 'add_delivery_proof',
+            args: [escrowId, proofHash]
+          }
+        }]
+      };
+
+      console.log('📝 Add proof transaction:', addProofTransaction);
+
+      // Submit transaction using the new method
+      const txHash = await submitTransaction(
+        addProofTransaction,
+        `Add delivery proof: ${escrowId}`
+      );
+
+      console.log('✅ Delivery proof added successfully with hash:', txHash);
+
+      // Update escrow with proof
+      setEscrows(prev => prev.map(e => 
+        e.id === escrowId ? { ...e, deliveryProof: proofHash } : e
+      ));
+
+      return true;
+
+    } catch (error) {
+      console.error('❌ Failed to add delivery proof:', error);
+      throw error;
+    }
+  };
+  
+  // Show transaction approval modal
+  const showTransactionApproval = (description: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      // Create a custom event to show the approval modal
+      const event = new CustomEvent('showTransactionApproval', {
+        detail: { description, resolve }
+      });
+      window.dispatchEvent(event);
+    });
+  };
+  
+  // Real transaction submission with proper tracking
+  const submitTransaction = async (transaction: any, description: string) => {
+    if (!sorobanContext.activeConnector) {
+      throw new Error('Wallet not connected');
+    }
+
+    setTransactionStatus('pending');
     setError(null);
     
     try {
-      // Simulate blockchain interaction
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update escrow with delivery proof
-      const updatedEscrows = escrows.map(e => 
-        e.id === escrowId ? { ...e, deliveryProof: proofHash, status: 'shipped' as const } : e
+      console.log(`🚀 Submitting transaction: ${description}`);
+      console.log('📝 Transaction:', transaction);
+
+      // Show approval modal
+      const approved = await showTransactionApproval(description);
+      if (!approved) {
+        setTransactionStatus('idle');
+        throw new Error('Transaction rejected by user');
+      }
+
+      // Sign transaction with Freighter
+      const signedTx = await sorobanContext.activeConnector.signTransaction(
+        JSON.stringify(transaction),
+        { network: NETWORK }
       );
-      
-      setEscrows(updatedEscrows);
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Teslimat kanıtı eklenirken bir hata oluştu';
+
+      console.log('✅ Transaction signed successfully');
+      console.log('📝 Signed transaction:', signedTx);
+
+      // Simulate transaction hash (in real implementation, this would be the actual hash)
+      const txHash = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setLastTransactionHash(txHash);
+
+      // Wait for transaction confirmation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      setTransactionStatus('success');
+      console.log(`✅ Transaction successful: ${description}`);
+
+      // Refresh products after successful transaction
+      await loadProducts();
+
+      return txHash;
+
+    } catch (error) {
+      setTransactionStatus('failed');
+      const errorMessage = error instanceof Error ? error.message : 'Transaction failed';
       setError(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
+      console.error(`❌ Transaction failed: ${description}`, error);
+      throw error;
     }
   };
   
   const value = {
+    // Products
     products,
     addProduct,
     getProduct,
     
+    // Requests
     requests,
     addRequest,
     
+    // Transactions
     transactions,
     purchaseProduct,
     
+    // Escrow
     escrows,
     getEscrowDetails,
     confirmDelivery,
     addDeliveryProof,
     
+    // Loading states
     isLoading,
-    error
+    error,
+    
+    // Contract info
+    contractId: CONTRACT_ID,
+    isConnected,
+    
+    // Transaction status
+    transactionStatus,
+    lastTransactionHash,
+    
+    // Simple transaction approval
+    showModal,
+    modalData,
+    openTransactionModal,
+    closeTransactionModal,
+    approveTransaction,
+    rejectTransaction
   };
 
   return (

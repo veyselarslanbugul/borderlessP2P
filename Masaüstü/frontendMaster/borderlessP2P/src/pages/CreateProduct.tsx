@@ -1,160 +1,156 @@
-import { useState } from 'react';
-import { useWallet } from '../contexts/WalletContext';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBlockchain } from '../contexts/BlockchainContext';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { TransactionStatus } from '../components/TransactionStatus';
 
-const CreateProduct = () => {
-  const { publicKey } = useWallet();
+const CreateProduct: React.FC = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addProduct, isLoading, error, isConnected } = useBlockchain();
   const [formData, setFormData] = useState({
-    productName: '',
-    productDetails: '',
-    estimatedDeliveryDate: '',
+    name: '',
     description: '',
+    price: '',
+    estimatedDelivery: '',
+    details: ''
   });
 
-  // Handle form input changes
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isConnected) {
+      alert('Lütfen önce cüzdanınızı bağlayın');
+      return;
+    }
+
+    try {
+      const product = await addProduct({
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        estimatedDelivery: formData.estimatedDelivery,
+        details: formData.details
+      });
+
+      alert('Ürün başarıyla eklendi!');
+      navigate('/products');
+    } catch (error) {
+      console.error('Failed to add product:', error);
+      alert('Ürün eklenirken hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Product data:', formData);
-      setIsSubmitting(false);
-      navigate('/products');
-    }, 1000);
-  };
-
-  // Redirect if not connected
-  if (!publicKey) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 max-w-md mx-auto text-center">
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Ürün eklemek için cüzdanınızı bağlayın.
-          </p>
-          <button
-            onClick={() => navigate('/home')}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-          >
-            Ana Sayfaya Dön
-          </button>
-        </div>
+    <div className="container mx-auto p-4 max-w-2xl">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Yeni Ürün Ekle</h1>
+        <p className="text-gray-600">Ürününüzü blockchain'e ekleyin</p>
       </div>
-    );
-  }
 
-  return (
-    <div className="container mx-auto px-4 py-8 pb-24">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Yeni Ürün</h1>
-      
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 max-w-md mx-auto">
-        {/* Product Details */}
-        <div className="mb-4">
-          <label htmlFor="productName" className="block text-gray-700 dark:text-gray-300 mb-2">
-            Getirilecek ürün adı
-          </label>
-          <input
-            type="text"
-            id="productName"
-            name="productName"
-            value={formData.productName}
+      {isConnected && <TransactionStatus />}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ürün Bilgileri</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Ürün Adı</label>
+              <Input
+                name="name"
+                value={formData.name}
             onChange={handleChange}
+                placeholder="Ürün adını girin"
             required
-            placeholder="Örn: Apple iPhone 15 Pro"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
         
-        <div className="mb-4">
-          <label htmlFor="productDetails" className="block text-gray-700 dark:text-gray-300 mb-2">
-            Ürün detayları
-          </label>
-          <input
-            type="text"
-            id="productDetails"
-            name="productDetails"
-            value={formData.productDetails}
+            <div>
+              <label className="block text-sm font-medium mb-2">Açıklama</label>
+              <Textarea
+                name="description"
+                value={formData.description}
             onChange={handleChange}
+                placeholder="Ürün açıklamasını girin"
+                rows={3}
             required
-            placeholder="Örn: 256GB, Siyah, ABD versiyonu"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
         
-        {/* Estimated Delivery Date */}
-        <div className="mb-4">
-          <label htmlFor="estimatedDeliveryDate" className="block text-gray-700 dark:text-gray-300 mb-2">
-            Tahmini teslim tarihi
-          </label>
-          <input
-            type="date"
-            id="estimatedDeliveryDate"
-            name="estimatedDeliveryDate"
-            value={formData.estimatedDeliveryDate}
+            <div>
+              <label className="block text-sm font-medium mb-2">Fiyat (XLM)</label>
+              <Input
+                name="price"
+                type="number"
+                value={formData.price}
             onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
             required
-            min={new Date().toISOString().split('T')[0]}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
         
-        {/* Description */}
-        <div className="mb-6">
-          <label htmlFor="description" className="block text-gray-700 dark:text-gray-300 mb-2">
-            Açıklama
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
+            <div>
+              <label className="block text-sm font-medium mb-2">Tahmini Teslimat</label>
+              <Input
+                name="estimatedDelivery"
+                value={formData.estimatedDelivery}
             onChange={handleChange}
+                placeholder="örn: 3-5 gün"
             required
-            rows={4}
-            placeholder="Ürün hakkında ek bilgiler, teslim şartları, vb."
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Detaylar</label>
+              <Textarea
+                name="details"
+                value={formData.details}
+                onChange={handleChange}
+                placeholder="Ek detaylar (opsiyonel)"
+                rows={2}
           />
         </div>
         
-        {/* Submit Button */}
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
         <div className="flex gap-4">
-          <button
+              <Button
             type="button"
+                variant="outline"
             onClick={() => navigate('/products')}
-            className="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-            disabled={isSubmitting}
+                className="flex-1"
           >
             İptal
-          </button>
-          <button
+              </Button>
+              <Button
             type="submit"
-            className="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Kaydediliyor...
-              </>
-            ) : (
-              'Kaydet'
-            )}
-          </button>
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {isLoading ? 'Ekleniyor...' : 'Ürün Ekle'}
+              </Button>
         </div>
       </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
