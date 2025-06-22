@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,35 +13,10 @@ const TransactionApproval: React.FC = () => {
     rejectTransaction 
   } = useBlockchain();
 
-  // Test if component is mounting
-  useEffect(() => {
-    console.log('🔍 TransactionApproval component MOUNTED');
-  }, []);
-
-  // Detailed debug logging
-  console.log('🔍 TransactionApproval render:', { 
-    showModal, 
-    modalData,
-    hasModalData: !!modalData,
-    shouldShow: showModal && modalData
-  });
-
-  // Always show debug info
+  // Don't render anything if modal is not active
   if (!showModal || !modalData) {
-    console.log('🔍 Modal not showing because:', {
-      showModal,
-      hasModalData: !!modalData
-    });
-    
-    // Show debug element
-    return (
-      <div className="fixed top-0 right-0 bg-red-500 text-white p-2 text-xs z-[9999]">
-        Modal Debug: show={String(showModal)}, data={String(!!modalData)}
-      </div>
-    );
+    return null;
   }
-
-  console.log('🔍 Modal should be visible now!');
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">

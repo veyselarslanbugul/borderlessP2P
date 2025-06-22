@@ -1,247 +1,256 @@
 import React from 'react';
-import Auth from '../components/Auth';
 import { Link } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { useBlockchain } from '../contexts/BlockchainContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight } from 'lucide-react';
-import { useBlockchain } from '../contexts/BlockchainContext';
-import { TransactionStatus } from '../components/TransactionStatus';
+import { Badge } from '@/components/ui/badge';
+import { 
+  ShoppingCart, 
+  Plane, 
+  Search, 
+  TrendingUp, 
+  Clock, 
+  MapPin, 
+  DollarSign,
+  Users,
+  Package,
+  Activity
+} from 'lucide-react';
 
 const Home = () => {
   const { publicKey } = useWallet();
   const { products, requests, transactions, isConnected } = useBlockchain();
 
-  // Mock popular products data
-  const popularProducts = [
-    { id: 1, title: 'Garmin fenix 7X', price: '2800 TL', country: 'ABD', brand: 'GARMIN', image: '/icons/watch.svg' },
-    { id: 2, title: 'iPhone 15 Plus', price: '35000 TL', country: 'Dubai', brand: 'APPLE', image: '/icons/phone.svg' },
-    { id: 3, title: 'MacBook Air M3', price: '28000 TL', country: 'ABD', brand: 'APPLE', image: '/icons/laptop.svg' },
-    { id: 4, title: 'AirPods Pro 2', price: '3200 TL', country: 'ABD', brand: 'APPLE', image: '/icons/headphones.svg' },
-    { id: 5, title: 'Nike Air Max 270', price: '1800 TL', country: 'ABD', brand: 'NIKE', image: '/icons/shoes.svg' },
-    { id: 6, title: 'Samsung Galaxy S24', price: '22000 TL', country: 'Dubai', brand: 'SAMSUNG', image: '/icons/phone.svg' },
-    { id: 7, title: 'Sony WH-1000XM5', price: '4500 TL', country: 'Japonya', brand: 'SONY', image: '/icons/headphones.svg' },
-    { id: 8, title: 'iPad Pro 11"', price: '18000 TL', country: 'ABD', brand: 'APPLE', image: '/icons/tablet.svg' },
-    { id: 9, title: 'Dyson V15 Detect', price: '6500 TL', country: 'İngiltere', brand: 'DYSON', image: '/icons/vacuum.svg' },
-    { id: 10, title: 'Canon EOS R6', price: '32000 TL', country: 'Japonya', brand: 'CANON', image: '/icons/camera.svg' },
-    { id: 11, title: 'Levi\'s 501 Jeans', price: '850 TL', country: 'ABD', brand: 'LEVI\'S', image: '/icons/jeans.svg' },
-    { id: 12, title: 'The North Face Jacket', price: '2200 TL', country: 'ABD', brand: 'TNF', image: '/icons/jacket.svg' },
-    { id: 13, title: 'Nintendo Switch OLED', price: '4800 TL', country: 'Japonya', brand: 'NINTENDO', image: '/icons/gaming.svg' },
-    { id: 14, title: 'Vitamix Blender', price: '5200 TL', country: 'ABD', brand: 'VITAMIX', image: '/icons/blender.svg' },
-    { id: 15, title: 'Ray-Ban Aviator', price: '1400 TL', country: 'İtalya', brand: 'RAY-BAN', image: '/icons/sunglasses.svg' }
+  // Format wallet address for display
+  const formatAddress = (address: string) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  // Quick stats
+  const stats = [
+    {
+      title: "Active Products",
+      value: products.length,
+      icon: Package,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50"
+    },
+    {
+      title: "Open Requests", 
+      value: requests.length,
+      icon: ShoppingCart,
+      color: "text-green-600",
+      bgColor: "bg-green-50"
+    },
+    {
+      title: "Total Transactions",
+      value: transactions.length,
+      icon: Activity,
+      color: "text-purple-600", 
+      bgColor: "bg-purple-50"
+    }
+  ];
+
+  // Recent activities
+  const recentActivities = [
+    {
+      type: "product",
+      title: "New iPhone 15 available",
+      location: "Dubai",
+      price: "35,000 TL",
+      time: "2 hours ago"
+    },
+    {
+      type: "request", 
+      title: "Looking for MacBook Air",
+      location: "USA",
+      price: "28,000 TL",
+      time: "4 hours ago"
+    },
+    {
+      type: "transaction",
+      title: "Payment completed",
+      location: "Germany", 
+      price: "1,200 TL",
+      time: "6 hours ago"
+    }
   ];
 
   return (
-    <div className={`container mx-auto px-4 max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-7xl ${
-      !publicKey 
-        ? 'min-h-screen flex flex-col items-center justify-center' 
-        : 'py-6 md:py-8 lg:py-12'
-    }`}>
-      {!publicKey ? (
-        <div className="flex flex-col h-full max-w-sm mx-auto w-full">
-          <h1 className="text-xl font-bold mb-6 text-center text-secondary">BorderlessP2P</h1>
-          
-          <div className="mb-6">
-            <Auth />
-          </div>
-          
-          <Card className="shadow-xs border-t border-border mt-4">
-            <CardContent className="p-6">
-              <h2 className="text-lg font-bold mb-2">Welcome</h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Connect your wallet to get products from abroad or earn money if you're traveling abroad.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Discover</h1>
-            <div className="flex items-center gap-3">
-              <button className="p-1" aria-label="Show notifications">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
-                VM
+    <div className="w-screen px-4 py-6" style={{ maxWidth: 'none', width: '100vw' }}>
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <div className="text-center mb-8">
+          <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-2xl p-8 shadow-lg">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+              Welcome to PeerZone!
+            </h1>
+            <p className="text-lg text-gray-700 mb-4">
+              Ready to discover global products or earn from your travels?
+            </p>
+            {publicKey && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-800">
+                  {formatAddress(publicKey)}
+                </span>
               </div>
-            </div>
+            )}
           </div>
-          
-          <p className="text-gray-500 mb-6">
-            Hello Veysel, welcome to Glocalzone! Select or add products from the "Start Shopping" button, or add your travel to earn money!
-          </p>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full justify-items-center mb-6">
-            <Button 
-              variant="outline"
-              asChild
-              className="h-auto py-4 flex items-center justify-between px-5 transition-all duration-120 active:scale-[1.02] rounded-2xl bg-blue-100/50 border-0 shadow-sm w-full"
-            >
-              <Link to="/create-request">
-                <span className="text-sm font-medium">Start Shopping</span>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </Link>
-            </Button>
-            
-            <Button 
-              variant="outline"
-              asChild
-              className="h-auto py-4 flex items-center justify-between px-5 transition-all duration-120 active:scale-[1.02] rounded-2xl bg-blue-100/50 border-0 shadow-sm w-full"
-            >
-              <Link to="/create-product">
-                <span className="text-sm font-medium">Add Travel</span>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22 16.32C22 16.32 18 20 12 20C6 20 2 16.32 2 16.32" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M22 7.68C22 7.68 18 4 12 4C6 4 2 7.68 2 7.68" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2 12H22" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </Link>
-            </Button>
-          </div>
-          
-          <Card className="shadow-xs mb-6 rounded-xl overflow-hidden bg-white">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-blue-50 to-indigo-100">
+          <Link to="/create-request">
+            <CardContent className="p-8">
+              <div className="flex items-center space-x-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <ShoppingCart className="w-8 h-8 text-white" />
+                </div>
                 <div className="flex-1">
-                  <p className="text-sm">
-                    We need you to customize your profile so we can offer you special deals and coupons.
+                  <h3 className="font-bold text-xl text-gray-800 mb-2">Create Request</h3>
+                  <p className="text-gray-600 text-base leading-relaxed">
+                    Tell us what you're looking for
                   </p>
                 </div>
-                <Button 
-                  variant="ghost"
-                  size="icon"
-                  asChild
-                  className="text-muted-foreground bg-blue-100/50 rounded-full h-8 w-8"
-                >
-                  <Link to="/profile">
-                    <ChevronRight className="h-5 w-5" />
-                  </Link>
-                </Button>
+                <div className="text-blue-600">
+                  <Search className="w-6 h-6" />
+                </div>
               </div>
             </CardContent>
-          </Card>
-          
-          {/* Popular Products Section */}
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold">Most Purchased from Abroad</h2>
-                <span className="text-red-500">🔊</span>
+          </Link>
+        </Card>
+
+        <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-green-50 to-emerald-100">
+          <Link to="/create-product">
+            <CardContent className="p-8">
+              <div className="flex items-center space-x-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Plane className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-xl text-gray-800 mb-2">Add Travel</h3>
+                  <p className="text-gray-600 text-base leading-relaxed">
+                    Earn money by bringing products
+                  </p>
+                </div>
+                <div className="text-green-600">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
               </div>
-              <Button variant="link" size="sm" className="text-muted-foreground text-sm">
-                View All
-              </Button>
+            </CardContent>
+          </Link>
+        </Card>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-12 h-12 ${stat.bgColor} rounded-xl flex items-center justify-center shadow-md`}>
+                    <Icon className={`w-6 h-6 ${stat.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
+                    <p className="text-sm text-gray-600 font-medium">{stat.title}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Recent Activities */}
+      <Card className="mb-8 border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
+          <CardTitle className="flex items-center space-x-3 text-gray-800">
+            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 text-white" />
             </div>
-            
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full justify-items-center">
-              {popularProducts.map((product) => (
-                <Card key={product.id} className="overflow-hidden shadow-xs">
-                  <CardContent className="p-0">
-                    <div className="aspect-square relative bg-white flex items-center justify-center p-2">
-                      <img 
-                        src={product.image} 
-                        alt={product.title} 
-                        className="max-w-full max-h-full object-contain"
-                      />
-                    </div>
-                    <div className="p-3">
-                      <div className="text-xs text-muted-foreground uppercase font-medium mb-1">
-                        {product.brand}
-                      </div>
-                      <h3 className="font-medium text-sm line-clamp-1 mb-0">{product.title}</h3>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {isConnected && <TransactionStatus />}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Ürünler</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">{products.length}</div>
-                <p className="text-gray-600">Aktif ürün</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Talepler</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">{requests.length}</div>
-                <p className="text-gray-600">Açık talep</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">İşlemler</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-600">{transactions.length}</div>
-                <p className="text-gray-600">Toplam işlem</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Son Ürünler</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {products.slice(0, 5).map((product) => (
-                  <div key={product.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                    <div>
-                      <h4 className="font-medium">{product.name}</h4>
-                      <p className="text-sm text-gray-600">{product.price} XLM</p>
-                    </div>
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {product.status}
+            <span className="text-xl font-bold">Recent Activities</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {recentActivities.map((activity, index) => (
+              <div key={index} className="flex items-center space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-100">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+                  activity.type === 'product' ? 'bg-gradient-to-br from-blue-100 to-blue-200' :
+                  activity.type === 'request' ? 'bg-gradient-to-br from-green-100 to-green-200' : 
+                  'bg-gradient-to-br from-purple-100 to-purple-200'
+                }`}>
+                  {activity.type === 'product' && <Package className="w-6 h-6 text-blue-600" />}
+                  {activity.type === 'request' && <ShoppingCart className="w-6 h-6 text-green-600" />}
+                  {activity.type === 'transaction' && <Activity className="w-6 h-6 text-purple-600" />}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-800">{activity.title}</h4>
+                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                    <span className="flex items-center space-x-1">
+                      <MapPin className="w-3 h-3" />
+                      <span>{activity.location}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <DollarSign className="w-3 h-3" />
+                      <span>{activity.price}</span>
                     </span>
                   </div>
-                ))}
-                {products.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">Henüz ürün yok</p>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{activity.time}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Son İşlemler</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {transactions.slice(0, 5).map((tx) => (
-                  <div key={tx.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                    <div>
-                      <h4 className="font-medium">{tx.description}</h4>
-                      <p className="text-sm text-gray-600">{tx.amount} XLM</p>
-                    </div>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                      {tx.status}
-                    </span>
-                  </div>
-                ))}
-                {transactions.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">Henüz işlem yok</p>
-                )}
-              </CardContent>
-            </Card>
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Button variant="outline" asChild className="h-auto py-6 flex flex-col space-y-3 border-2 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200">
+          <Link to="/products">
+            <Package className="w-8 h-8 text-blue-600" />
+            <span className="text-sm font-semibold">Browse Products</span>
+          </Link>
+        </Button>
+        
+        <Button variant="outline" asChild className="h-auto py-6 flex flex-col space-y-3 border-2 hover:border-green-500 hover:bg-green-50 transition-all duration-200">
+          <Link to="/requests">
+            <ShoppingCart className="w-8 h-8 text-green-600" />
+            <span className="text-sm font-semibold">View Requests</span>
+          </Link>
+        </Button>
+        
+        <Button variant="outline" asChild className="h-auto py-6 flex flex-col space-y-3 border-2 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200">
+          <Link to="/orders">
+            <Clock className="w-8 h-8 text-purple-600" />
+            <span className="text-sm font-semibold">My Orders</span>
+          </Link>
+        </Button>
+        
+        <Button variant="outline" asChild className="h-auto py-6 flex flex-col space-y-3 border-2 hover:border-orange-500 hover:bg-orange-50 transition-all duration-200">
+          <Link to="/profile">
+            <Users className="w-8 h-8 text-orange-600" />
+            <span className="text-sm font-semibold">Profile</span>
+          </Link>
+        </Button>
+      </div>
+
+      {/* Blockchain Connection Status */}
+      {isConnected && (
+        <div className="mt-8 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-green-700 dark:text-green-300">
+              Connected to Stellar Testnet
+            </span>
           </div>
         </div>
       )}

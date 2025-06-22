@@ -38,39 +38,17 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
   const connect = async () => {
     try {
       setIsConnecting(true);
-      console.log('WalletContext: Starting connection...');
-      console.log('WalletContext: Available connectors:', sorobanContext.connectors.map(c => c.name));
-      console.log('WalletContext: Active connector before connect:', sorobanContext.activeConnector?.name);
       
       // Try to find Freighter connector explicitly
       const freighterConnector = sorobanContext.connectors.find(c => 
         c.name === 'freighter' || c.name === 'Freighter' || c.id === 'freighter'
       );
       
-      if (freighterConnector) {
-        console.log('WalletContext: Found Freighter connector:', freighterConnector.name);
-        // Try to connect directly to Freighter
-        if (sorobanContext.connect && typeof sorobanContext.connect === 'function') {
-          console.log('WalletContext: Attempting to connect with Freighter...');
-        }
-      } else {
-        console.log('WalletContext: Freighter connector not found!');
-        console.log('WalletContext: Available connector details:', sorobanContext.connectors);
-      }
-      
       await sorobanContext.connect();
       
       // Add a small delay to ensure address is retrieved
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      console.log('WalletContext: Connection successful');
-      console.log('WalletContext: Active connector after connect:', sorobanContext.activeConnector?.name);
-      console.log('WalletContext: Connected address:', sorobanContext.address);
-      console.log('WalletContext: Full soroban context:', {
-        address: sorobanContext.address,
-        activeConnector: sorobanContext.activeConnector,
-        connected: sorobanContext.address ? true : false
-      });
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       throw error;
@@ -93,7 +71,7 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
     connect,
     disconnect,
     isConnecting,
-    isConnected: !!sorobanContext.address,
+    isConnected: !!(sorobanContext.address && sorobanContext.activeConnector),
     activeChain: sorobanContext.activeChain?.name || null,
   };
 

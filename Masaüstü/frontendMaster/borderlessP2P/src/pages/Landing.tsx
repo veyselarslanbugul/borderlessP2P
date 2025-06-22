@@ -82,7 +82,7 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-              Limitless World
+              PeerZone
             </h1>
             <div className="flex items-center gap-2 md:gap-4">
               <Button variant="ghost" size="sm" className="text-sm md:text-base">
@@ -187,7 +187,7 @@ const Landing = () => {
               size="lg"
               className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
             >
-              <Link to="/home">
+              <Link to="/connect-wallet">
                 Start Shopping
               </Link>
             </Button>
@@ -197,7 +197,7 @@ const Landing = () => {
               size="lg" 
               className="w-full md:w-auto border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3"
             >
-              <Link to="/create-product">
+              <Link to="/connect-wallet">
                 Add Travel
               </Link>
             </Button>

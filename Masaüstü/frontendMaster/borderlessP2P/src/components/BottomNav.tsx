@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Calendar, Plane, MessageCircle, Plus } from 'lucide-react';
+import { Search, Calendar, Plane, MessageCircle, Plus, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWallet } from '@/contexts/WalletContext';
 
 const BottomNav = () => {
   const location = useLocation();
+  const { isConnected } = useWallet();
   
   // Helper function to determine if a link is active
   const isActive = (path: string) => {
@@ -49,6 +51,13 @@ const BottomNav = () => {
         >
           <Plus className="h-6 w-6" />
         </Link>
+        
+        {/* Wallet Connection Indicator */}
+        {isConnected && (
+          <div className="absolute -top-6 left-4 bg-green-500 text-white p-2 rounded-full shadow-lg">
+            <Wallet className="h-4 w-4" />
+          </div>
+        )}
       </div>
     </nav>
   );

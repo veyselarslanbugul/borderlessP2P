@@ -13,15 +13,15 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'BorderlessP2P',
-        short_name: 'BorderlessP2P',
-        description: 'Yurt dışından ürün getirtme ve yolculuk paylaşım platformu',
+        name: 'PeerZone',
+        short_name: 'PeerZone',
+        description: 'Global peer-to-peer marketplace for travel-based product delivery',
         theme_color: '#4f46e5',
         background_color: '#f9fafb',
         display: 'standalone',
         start_url: '/',
         orientation: 'portrait',
-        lang: 'tr',
+        lang: 'en',
         categories: ['shopping', 'travel', 'social'],
         icons: [
           {

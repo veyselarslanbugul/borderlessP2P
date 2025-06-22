@@ -4,14 +4,35 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="Yurt dışından ürün getirtme ve yolculuk paylaşım platformu" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="description" content="Global peer-to-peer marketplace for travel-based product delivery" />
     <meta name="theme-color" content="#F4CE14" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <title>BorderlessP2P</title>
+    <title>PeerZone</title>
     <style>
+      /* Force full screen display */
+      * {
+        box-sizing: border-box;
+      }
+      
+      html, body {
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden !important;
+      }
+      
+      #root {
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+      }
+      
       /* iOS safe area insets */
       :root {
         --sat: env(safe-area-inset-top);
@@ -32,6 +53,16 @@
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         user-select: none;
+      }
+      
+      /* Override all max-width constraints */
+      [class*="max-w-"] {
+        max-width: none !important;
+      }
+      
+      .container {
+        max-width: none !important;
+        width: 100vw !important;
       }
     </style>
   </head>

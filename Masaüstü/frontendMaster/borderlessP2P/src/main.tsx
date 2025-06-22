@@ -8,6 +8,8 @@ import './index.css'
 import { WalletProvider } from './contexts/WalletContext'
 import { BlockchainProvider } from './contexts/BlockchainContext'
 import Layout from './components/Layout'
+import ProtectedRoute from './components/ProtectedRoute'
+import ConnectWallet from './pages/ConnectWallet'
 import Landing from './pages/Landing'
 import Home from './pages/Home'
 import Products from './pages/Products'
@@ -22,15 +24,13 @@ import Chat from './pages/Chat'
 import ChatDetail from './pages/ChatDetail'
 import Proposals from './pages/Proposals'
 import CreateProposal from './pages/CreateProposal'
-import TestBlockchain from './pages/TestBlockchain'
+import TestContract from './pages/TestContract'
 
 const chains = [testnet]
 
 // Use only Freighter connector
 const freighterConnector = freighter()
 const connectors = [freighterConnector]
-
-console.log('BorderlessP2P: Using Freighter connector for Stellar testnet')
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -39,11 +39,17 @@ createRoot(document.getElementById('root')!).render(
       <BlockchainProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            {/* Public routes */}
+            <Route path="/" element={<Navigate to="/connect-wallet" replace />} />
             <Route path="/landing" element={<Landing />} />
-              <Route path="/test" element={<TestBlockchain />} />
-              <Route path="/test-blockchain" element={<TestBlockchain />} />
-            <Route element={<Layout />}>
+            <Route path="/connect-wallet" element={<ConnectWallet />} />
+            
+            {/* Protected routes - require wallet connection */}
+            <Route element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
               <Route path="/home" element={<Home />} />
               <Route path="/products" element={<Products />} />
               <Route path="/products/:id" element={<ProductDetail />} />
@@ -57,6 +63,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/chat/:id" element={<ChatDetail />} />
               <Route path="/proposals" element={<Proposals />} />
               <Route path="/create-proposal" element={<CreateProposal />} />
+              <Route path="/test-contract" element={<TestContract />} />
             </Route>
           </Routes>
         </BrowserRouter>

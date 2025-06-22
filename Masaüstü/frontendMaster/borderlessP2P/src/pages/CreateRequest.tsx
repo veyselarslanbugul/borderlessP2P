@@ -1,39 +1,51 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useBlockchain } from '@/contexts/BlockchainContext';
+import { ArrowLeft, Package, DollarSign, MapPin, Calendar, FileText } from 'lucide-react';
 
-const CreateRequest = () => {
+const CreateRequest: React.FC = () => {
   const { publicKey } = useWallet();
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addRequest } = useBlockchain();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    productName: '',
-    minPrice: '',
-    maxPrice: '',
+    title: '',
     description: '',
-    country: 'TR',
+    budget: '',
+    location: '',
+    deadline: ''
   });
 
-  // Handle form input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      await addRequest({
+        title: formData.title,
+        description: formData.description,
+        budget: parseFloat(formData.budget) || 0,
+        location: formData.location,
+        deadline: formData.deadline,
+        status: 'Active'
+      });
+
+      navigate('/requests');
+    } catch (error) {
+      console.error('Error creating request:', error);
+      alert('Failed to create request. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Request data:', formData);
-      setIsSubmitting(false);
-      navigate('/requests');
-    }, 1000);
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   // Redirect if not connected
@@ -55,143 +67,144 @@ const CreateRequest = () => {
     );
   }
 
-  // Country options
-  const countries = [
-    { code: 'TR', name: 'Türkiye' },
-    { code: 'US', name: 'Amerika Birleşik Devletleri' },
-    { code: 'GB', name: 'İngiltere' },
-    { code: 'DE', name: 'Almanya' },
-    { code: 'FR', name: 'Fransa' },
-    { code: 'IT', name: 'İtalya' },
-    { code: 'JP', name: 'Japonya' },
-    { code: 'KR', name: 'Güney Kore' },
-  ];
-
   return (
-    <div className="container mx-auto px-4 py-8 pb-24">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Yeni Sipariş</h1>
-      
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 max-w-md mx-auto">
-        {/* Product Name */}
-        <div className="mb-4">
-          <label htmlFor="productName" className="block text-gray-700 dark:text-gray-300 mb-2">
-            Ürün adı
-          </label>
-          <input
-            type="text"
-            id="productName"
-            name="productName"
-            value={formData.productName}
-            onChange={handleChange}
-            required
-            placeholder="Örn: Apple AirPods Pro"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          />
-        </div>
-        
-        {/* Price Range */}
-        <div className="mb-4 grid grid-cols-2 gap-4">
+    <div className="container mx-auto px-4 py-6 md:py-8 lg:py-12 pb-24 max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="rounded-full"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div>
-            <label htmlFor="minPrice" className="block text-gray-700 dark:text-gray-300 mb-2">
-              Min. Fiyat (TL)
-            </label>
-            <input
-              type="number"
-              id="minPrice"
-              name="minPrice"
-              value={formData.minPrice}
-              onChange={handleChange}
-              required
-              min="0"
-              placeholder="0"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
-          <div>
-            <label htmlFor="maxPrice" className="block text-gray-700 dark:text-gray-300 mb-2">
-              Max. Fiyat (TL)
-            </label>
-            <input
-              type="number"
-              id="maxPrice"
-              name="maxPrice"
-              value={formData.maxPrice}
-              onChange={handleChange}
-              required
-              min="0"
-              placeholder="5000"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
+            <h1 className="text-2xl font-extrabold">Create Product Request</h1>
+            <p className="text-muted-foreground">Tell us what you're looking for</p>
           </div>
         </div>
-        
-        {/* Description */}
-        <div className="mb-4">
-          <label htmlFor="description" className="block text-gray-700 dark:text-gray-300 mb-2">
-            Açıklama
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            rows={4}
-            placeholder="Ürün detaylarını, rengini, modelini ve diğer özelliklerini belirtin."
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          />
-        </div>
-        
-        {/* Country */}
-        <div className="mb-6">
-          <label htmlFor="country" className="block text-gray-700 dark:text-gray-300 mb-2">
-            Gönderileceği ülke
-          </label>
-          <select
-            id="country"
-            name="country"
-            value={formData.country}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          >
-            {countries.map((country) => (
-              <option key={country.code} value={country.code}>
-                {country.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        {/* Submit Button */}
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={() => navigate('/requests')}
-            className="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-            disabled={isSubmitting}
-          >
-            İptal
-          </button>
-          <button
-            type="submit"
-            className="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Kaydediliyor...
-              </>
-            ) : (
-              'Kaydet'
-            )}
-          </button>
-        </div>
-      </form>
+
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Product Request Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title */}
+              <div className="space-y-2">
+                <label htmlFor="title" className="text-sm font-medium">
+                  Request Title *
+                </label>
+                <Input
+                  id="title"
+                  type="text"
+                  placeholder="What are you looking for?"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Description *
+                </label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe your requirements in detail..."
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  required
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+
+              {/* Budget */}
+              <div className="space-y-2">
+                <label htmlFor="budget" className="text-sm font-medium">
+                  Budget (XLM) *
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="budget"
+                    type="number"
+                    placeholder="0.00"
+                    value={formData.budget}
+                    onChange={(e) => handleInputChange('budget', e.target.value)}
+                    required
+                    className="h-12 pl-10"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <label htmlFor="location" className="text-sm font-medium">
+                  Location
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="location"
+                    type="text"
+                    placeholder="Where do you need this?"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    className="h-12 pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Deadline */}
+              <div className="space-y-2">
+                <label htmlFor="deadline" className="text-sm font-medium">
+                  Deadline
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="deadline"
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => handleInputChange('deadline', e.target.value)}
+                    className="h-12 pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                    Creating Request...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Create Request
+                  </div>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
