@@ -74,7 +74,7 @@ npm run dev
 
 
 4. *Open your browser*
-Navigate to http://localhost:5174
+Navigate to http://localhost:3000
 
 ### Environment Setup
 
@@ -198,12 +198,6 @@ npm run test:integration
 - [ ] Machine learning optimization
 - [ ] Decentralized governance (DAO)
 
-### Long-term Vision (2025+) 🌟
-- [ ] Metaverse integration
-- [ ] AR/VR shopping experiences
-- [ ] Autonomous delivery partnerships
-- [ ] Global payment network
-- [ ] Sustainability initiatives
 
 ## 🤝 Contributing
 
@@ -227,19 +221,8 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Links
 
-- *Live Demo*: [https://peerzone.app](https://peerzone.app)
-- *Documentation*: [https://docs.peerzone.app](https://docs.peerzone.app)
-- *Stellar Documentation*: [https://developers.stellar.org](https://developers.stellar.org)
-- *Soroban Documentation*: [https://soroban.stellar.org](https://soroban.stellar.org)
 
-## 📞 Support
-
-- *GitHub Issues*: [Create an issue](https://github.com/yourusername/peerzone/issues)
-- *Discord*: [Join our community](https://discord.gg/peerzone)
-- *Email*: support@peerzone.app
-- *Twitter*: [@PeerZoneApp](https://twitter.com/PeerZoneApp)
 
 ## 🙏 Acknowledgments
 
