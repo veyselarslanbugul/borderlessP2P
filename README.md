@@ -19,24 +19,8 @@ PeerZone connects global travelers with product seekers, enabling secure cross-b
 
 ## 🏗 Architecture
 
-### System Components
+![image](https://github.com/user-attachments/assets/24a39169-b8b9-4bb7-9e49-fc534a5edbd4)
 
-
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Smart         │    │   Stellar       │
-│   (React/TS)    │◄──►│   Contracts     │◄──►│   Blockchain    │
-│                 │    │   (Rust)        │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Wallet        │    │   Escrow        │    │   NFT           │
-│   Integration   │    │   System        │    │   Reputation    │
-│   (Freighter)   │    │   (Smart)       │    │   System        │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-
-
-### Smart Contract Structure
 
 
 PeerZone Smart Contracts (Rust/Soroban)
@@ -80,26 +64,8 @@ PeerZone Smart Contracts (Rust/Soroban)
 ## 📦 Project Structure
 
 
-src/
-├── components/          # Reusable UI components
-│   ├── ui/             # shadcn/ui components
-│   ├── Auth.tsx        # Wallet authentication
-│   ├── Layout.tsx      # Main layout wrapper
-│   └── BottomNav.tsx   # Mobile navigation
-├── contexts/           # React context providers
-│   ├── WalletContext.tsx
-│   └── BlockchainContext.tsx
-├── pages/              # Application pages
-│   ├── Landing.tsx     # Landing page
-│   ├── Home.tsx        # Main dashboard
-│   ├── CreateRequest.tsx # Product request creation
-│   ├── CreateProduct.tsx # Travel offer creation
-│   ├── Products.tsx    # Travel management
-│   ├── Requests.tsx    # Product requests
-│   ├── Chat.tsx        # Messaging system
-│   └── Profile.tsx     # User profile
-├── lib/                # Utility functions
-└── main.tsx           # Application entry point
+![image](https://github.com/user-attachments/assets/029a36df-b09f-4fca-a7cd-ba2a03fde700)
+
 
 
 ## 🚀 Quick Start
