@@ -1,0 +1,253 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Mobil viewport düzeltmeleri */
+:root {
+  --vh: 1vh;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Border radius */
+  --radius: 0.5rem;
+  
+  /* Custom color scheme - Stellar based */
+  --color-primary: #F4CE14; /* Stellar Yellow - CTA, active state */
+  --color-secondary: #27374D; /* Navy - headings, icons */
+  --color-accent: #526D82; /* Medium blue - button hover, icon emphasis */
+  --color-surface: #F8FAFC; /* Light gray - card & screen background */
+  --color-outline: #CBD5E1; /* Light gray - lines, dividers */
+  
+  /* shadcn/ui variables */
+  --background: var(--color-surface);
+  --foreground: var(--color-secondary);
+  --card: #FFFFFF;
+  --card-foreground: var(--color-secondary);
+  --popover: #FFFFFF;
+  --popover-foreground: var(--color-secondary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-secondary);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: #FFFFFF;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: var(--color-accent);
+  --accent-foreground: #FFFFFF;
+  --destructive: #ef4444;
+  --destructive-foreground: #FFFFFF;
+  --border: var(--color-outline);
+  --input: var(--color-outline);
+  --ring: var(--color-accent);
+}
+
+a {
+  font-weight: 500;
+  color: var(--color-secondary);
+  text-decoration: inherit;
+  transition: color 0.15s ease;
+}
+a:hover {
+  color: var(--color-accent);
+}
+
+body {
+  margin: 0;
+  display: flex;
+  min-width: 320px;
+  min-height: 100vh;
+  /* Mobil tarayıcılar için düzeltme */
+  min-height: calc(var(--vh, 1vh) * 100);
+  background-color: var(--color-surface);
+  color: var(--color-secondary);
+  line-height: 1.625; /* leading-relaxed */
+  width: 100%;
+}
+
+/* Responsive tipografi */
+h1 {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 800; /* font-extrabold */
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 700; /* font-bold */
+  line-height: 1.25;
+}
+
+/* Desktop tipografi */
+@media (min-width: 768px) {
+  h1 {
+    font-size: 2rem; /* text-3xl on desktop */
+  }
+  h2 {
+    font-size: 1.5rem; /* text-2xl on desktop */
+  }
+}
+
+/* Mobil ekranlar için metin boyutları */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.375rem;
+  }
+  h2 {
+    font-size: 1.125rem;
+  }
+  body {
+    font-size: 0.9375rem;
+  }
+}
+
+button {
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+}
+button:hover {
+  transform: scale(1.02);
+  background-color: var(--color-primary);
+}
+button:active {
+  transform: scale(0.98);
+}
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Dokunma alanı düzeltmeleri */
+@media (pointer: coarse) {
+  button, 
+  a, 
+  input[type="button"], 
+  input[type="submit"],
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+.dark {
+  --color-surface: #0F172A;
+  --color-outline: #334155;
+  
+  --background: var(--color-surface);
+  --foreground: #F8FAFC;
+  --card: #1E293B;
+  --card-foreground: #F8FAFC;
+  --popover: #1E293B;
+  --popover-foreground: #F8FAFC;
+  --primary: var(--color-primary);
+  --primary-foreground: #0F172A;
+  --secondary: #94A3B8;
+  --secondary-foreground: #F8FAFC;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #475569;
+  --accent-foreground: #F8FAFC;
+  --destructive: #ef4444;
+  --destructive-foreground: #F8FAFC;
+  --border: var(--color-outline);
+  --input: var(--color-outline);
+  --ring: var(--color-accent);
+}
+
+/* Responsive kapsayıcı genişlik düzenlemeleri */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Responsive breakpoints for container */
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
+}
+
+/* Küçük mobil ekranlar için padding düzeltmesi */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
