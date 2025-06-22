@@ -23,31 +23,9 @@ PeerZone connects global travelers with product seekers, enabling secure cross-b
 
 
 
-PeerZone Smart Contracts (Rust/Soroban)
-├── Product Management
-│   ├── add_product() - Create new travel offers
-│   ├── list_products() - Get all available products
-│   └── update_product() - Modify product details
-│
-├── Request Management
-│   ├── add_request() - Create product requests
-│   ├── list_requests() - Get all requests
-│   └── match_request() - Match requests with offers
-│
-├── Escrow System
-│   ├── create_escrow() - Initialize payment escrow
-│   ├── release_funds() - Release payment to seller
-│   └── refund_buyer() - Return funds to buyer
-│
-├── Reputation System
-│   ├── mint_reputation_nft() - Create reputation token
-│   ├── update_rating() - Update user rating
-│   └── get_reputation() - Retrieve user reputation
-│
-└── Delivery Management
-    ├── add_delivery_proof() - Submit delivery evidence
-    ├── verify_delivery() - Verify delivery completion
-    └── complete_transaction() - Finalize transaction
+![image](https://github.com/user-attachments/assets/6a7b1dcd-5f44-4a33-886a-41aaffa66034)
+
+![image](https://github.com/user-attachments/assets/6da51f57-cec1-4eb3-91fc-6d4a65f95cb1)
 
 
 ## 🛠 Tech Stack
