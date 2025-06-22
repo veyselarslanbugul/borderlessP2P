@@ -3,11 +3,14 @@ import Auth from '../components/Auth';
 import { Link } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronRight } from 'lucide-react';
+import { useBlockchain } from '../contexts/BlockchainContext';
+import { TransactionStatus } from '../components/TransactionStatus';
 
 const Home = () => {
   const { publicKey } = useWallet();
+  const { products, requests, transactions, isConnected } = useBlockchain();
 
   // Mock popular products data
   const popularProducts = [
@@ -159,6 +162,86 @@ const Home = () => {
                 </Card>
               ))}
             </div>
+          </div>
+
+          {isConnected && <TransactionStatus />}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Ürünler</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">{products.length}</div>
+                <p className="text-gray-600">Aktif ürün</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Talepler</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">{requests.length}</div>
+                <p className="text-gray-600">Açık talep</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">İşlemler</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">{transactions.length}</div>
+                <p className="text-gray-600">Toplam işlem</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Son Ürünler</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {products.slice(0, 5).map((product) => (
+                  <div key={product.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                    <div>
+                      <h4 className="font-medium">{product.name}</h4>
+                      <p className="text-sm text-gray-600">{product.price} XLM</p>
+                    </div>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      {product.status}
+                    </span>
+                  </div>
+                ))}
+                {products.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">Henüz ürün yok</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Son İşlemler</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {transactions.slice(0, 5).map((tx) => (
+                  <div key={tx.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                    <div>
+                      <h4 className="font-medium">{tx.description}</h4>
+                      <p className="text-sm text-gray-600">{tx.amount} XLM</p>
+                    </div>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                      {tx.status}
+                    </span>
+                  </div>
+                ))}
+                {transactions.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">Henüz işlem yok</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}

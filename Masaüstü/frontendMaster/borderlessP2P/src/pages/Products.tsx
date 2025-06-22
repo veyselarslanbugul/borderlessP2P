@@ -1,10 +1,19 @@
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plane, Plus } from "lucide-react";
+import { useBlockchain } from '../contexts/BlockchainContext';
+import { useWallet } from '../contexts/WalletContext';
+import { Badge } from '../components/ui/badge';
+import { TransactionStatus } from '../components/TransactionStatus';
 
-const Products = () => {
+const Products: React.FC = () => {
+  const { products, purchaseProduct, isLoading, error, isConnected } = useBlockchain();
+  const { publicKey } = useWallet();
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
+
   // Tab options
   const tabs = [
     { id: 'active', label: 'Active' },
@@ -12,64 +21,162 @@ const Products = () => {
     { id: 'archived', label: 'Archived' },
   ];
 
-  // Mock products data - empty for now to show empty state
-  const products = [];
+  // Filter products by status
+  const getProductsByStatus = (status: string) => {
+    return products.filter(product => product.status === status);
+  };
 
-  return (
-    <div className="container mx-auto px-4 py-6 md:py-8 lg:py-12 pb-24 max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold mb-6">Travels</h1>
-          
-          <Link
-            to="/create-product"
-            className="bg-yellow-400 hover:bg-yellow-500 text-black p-3 rounded-full shadow-lg transition-colors"
-            aria-label="Add Travel"
-          >
-            <Plus className="h-6 w-6" />
-          </Link>
+  const handlePurchase = async (productId: string, price: string) => {
+    if (!isConnected) {
+      alert('Lütfen önce cüzdanınızı bağlayın');
+      return;
+    }
+
+    try {
+      setPurchasingId(productId);
+      await purchaseProduct(productId, price);
+      alert('Ürün başarıyla satın alındı!');
+    } catch (error) {
+      console.error('Purchase failed:', error);
+      alert('Satın alma işlemi başarısız: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
+    } finally {
+      setPurchasingId(null);
+    }
+  };
+
+  // Render product card
+  const renderProductCard = (product: any) => (
+    <Card key={product.id} className="hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <CardTitle className="text-lg">{product.name}</CardTitle>
+        <div className="flex justify-between items-center">
+          <Badge variant={product.status === 'Satışta' ? 'default' : 'secondary'}>
+            {product.status}
+          </Badge>
+          <span className="text-lg font-bold text-blue-600">
+            {product.price} XLM
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-gray-600">{product.description}</p>
+        <div className="text-sm text-gray-500">
+          <p>Satıcı: {product.seller}</p>
+          <p>Teslimat: {product.estimatedDelivery}</p>
         </div>
         
-        {/* Tabs */}
-        <Tabs defaultValue="active" className="w-full">
-          <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl mb-6">
-            <TabsList className="w-full bg-transparent gap-1">
-              {tabs.map((tab) => (
-                <TabsTrigger 
-                  key={tab.id}
-                  value={tab.id}
-                  className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-black dark:data-[state=active]:text-white rounded-xl"
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        <div className="flex gap-2">
+          <Link to={`/product/${product.id}`} className="flex-1">
+            <Button variant="outline" className="w-full">
+              Detaylar
+            </Button>
+          </Link>
+          
+          {product.status === 'Satışta' && (
+            <Button
+              onClick={() => handlePurchase(product.id, product.price)}
+              disabled={purchasingId === product.id}
+              className="flex-1"
+            >
+              {purchasingId === product.id ? 'Satın Alınıyor...' : 'Satın Al'}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Redirect if not connected
+  if (!publicKey) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 max-w-md mx-auto text-center">
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            Ürünleri görmek için cüzdanınızı bağlayın.
+          </p>
+          <Button asChild>
+            <Link to="/home">
+              Ana Sayfaya Dön
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Ürünler</h1>
+        <Link to="/create-product">
+          <Button>Yeni Ürün Ekle</Button>
+          </Link>
+      </div>
+
+      {isConnected && <TransactionStatus />}
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Ürünler yükleniyor...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((product) => (
+            <Card key={product.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg">{product.name}</CardTitle>
+                <div className="flex justify-between items-center">
+                  <Badge variant={product.status === 'Satışta' ? 'default' : 'secondary'}>
+                    {product.status}
+                  </Badge>
+                  <span className="text-lg font-bold text-blue-600">
+                    {product.price} XLM
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">{product.description}</p>
+                <div className="text-sm text-gray-500">
+                  <p>Satıcı: {product.seller}</p>
+                  <p>Teslimat: {product.estimatedDelivery}</p>
           </div>
 
-          {tabs.map((tab) => (
-            <TabsContent key={tab.id} value={tab.id} className="mt-0">
-              <Card className="shadow-xs">
-                <CardContent className="p-8 flex flex-col items-center text-center">
-                  <div className="text-6xl mb-4">✈️</div>
-                  <h2 className="text-lg font-bold mb-2">No Active Travel Yet</h2>
-                  <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                    You don't have an active travel yet.
-                  </p>
-                  <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                    Add a new travel with the ➕ button in the top right.
-                  </p>
+                <div className="flex gap-2">
+                  <Link to={`/product/${product.id}`} className="flex-1">
+                    <Button variant="outline" className="w-full">
+                      Detaylar
+                    </Button>
+                  </Link>
                   
-                  <Button asChild className="bg-yellow-400 hover:bg-yellow-500 text-black">
-                    <Link to="/create-product">
-                      Add Travel
-                    </Link>
+                  {product.status === 'Satışta' && (
+                    <Button
+                      onClick={() => handlePurchase(product.id, product.price)}
+                      disabled={purchasingId === product.id}
+                      className="flex-1"
+                    >
+                      {purchasingId === product.id ? 'Satın Alınıyor...' : 'Satın Al'}
                   </Button>
+                  )}
+                </div>
                 </CardContent>
               </Card>
-            </TabsContent>
           ))}
-        </Tabs>
+        </div>
+      )}
+
+      {!isLoading && products.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500 text-lg">Henüz ürün bulunmuyor</p>
+          <p className="text-gray-400">İlk ürünü eklemek için yukarıdaki butonu kullanın</p>
       </div>
+      )}
     </div>
   );
 };
