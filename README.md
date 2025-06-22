@@ -115,7 +115,7 @@ src/
 
 1. *Clone the repository*
 bash
-git clone https://github.com/yourusername/peerzone.git
+git clone https://github.com/veyselarslanbugul/peerzone.git
 cd peerzone
 
 
@@ -227,27 +227,27 @@ npm run test:integration
 
 ## 🗺 Future Roadmap
 
-### Phase 1: Foundation (Q1 2024) ✅
+### Phase 1: Foundation (Q1 ) ✅
 - [x] Core marketplace functionality
 - [x] Wallet integration
 - [x] Basic escrow system
 - [x] Mobile-responsive design
 
-### Phase 2: Enhancement (Q2 2024) 🚧
+### Phase 2: Enhancement (Q2 ) 🚧
 - [ ] Advanced matching algorithm
 - [ ] Multi-language support
 - [ ] Advanced reputation system
 - [ ] Mobile app development
 - [ ] AI-powered fraud detection
 
-### Phase 3: Expansion (Q3 2024) 📋
+### Phase 3: Expansion (Q3 ) 📋
 - [ ] Cross-chain integration (Ethereum, Polygon)
 - [ ] DeFi features (lending, insurance)
 - [ ] Advanced analytics dashboard
 - [ ] API for third-party integrations
 - [ ] White-label solutions
 
-### Phase 4: Scale (Q4 2024) 🎯
+### Phase 4: Scale (Q4 ) 🎯
 - [ ] Global expansion to 50+ countries
 - [ ] Enterprise partnerships
 - [ ] Advanced logistics integration
