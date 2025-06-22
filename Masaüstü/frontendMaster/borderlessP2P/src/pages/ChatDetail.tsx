@@ -16,6 +16,25 @@ const ChatDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [newMessage, setNewMessage] = useState('');
+  const [messages, setMessages] = useState<Array<{
+    id: number;
+    text: string;
+    sender: string;
+    timestamp: string;
+  }>>([
+    {
+      id: 1,
+      text: "Merhaba! Bu ürün hala mevcut mu?",
+      sender: "other",
+      timestamp: "2024-01-15T10:30:00Z"
+    },
+    {
+      id: 2,
+      text: "Evet, hala mevcut. Fiyatta pazarlık yapabiliriz.",
+      sender: "user",
+      timestamp: "2024-01-15T10:32:00Z"
+    }
+  ]);
   
   // Mock chat data - in real app, fetch from API or blockchain
   const [chat] = useState({
@@ -54,12 +73,18 @@ const ChatDetail = () => {
     ] as Message[]
   });
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
-    
-    // In real app, this would send the message to the API or blockchain
-    console.log('Sending message:', newMessage);
-    setNewMessage('');
+  const handleSendMessage = () => {
+    if (newMessage.trim()) {
+      const message = {
+        id: Date.now(),
+        text: newMessage,
+        sender: 'user',
+        timestamp: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, message]);
+      setNewMessage('');
+    }
   };
 
   return (
@@ -121,14 +146,14 @@ const ChatDetail = () => {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              handleSend();
+              handleSendMessage();
             }
           }}
         />
         <Button 
           size="icon" 
           className="bg-yellow-400 hover:bg-yellow-500 text-black"
-          onClick={handleSend}
+          onClick={handleSendMessage}
           disabled={!newMessage.trim()}
         >
           <Send className="h-5 w-5" />

@@ -1,13 +1,15 @@
 import React from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, MapPin, Calendar, DollarSign, Plane } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBlockchain } from '../contexts/BlockchainContext';
 
 // Define the Message type
 interface Message {
@@ -25,13 +27,26 @@ interface Conversation {
   unread: number;
   avatar: string;
   messages: Message[];
+  sellerAddress?: string;
+  productId?: string;
 }
 
 const Chat = () => {
   const { publicKey } = useWallet();
+  const { products } = useBlockchain();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [activeConversation, setActiveConversation] = useState<number | null>(1);
   const [newMessage, setNewMessage] = useState('');
   const messageEndRef = useRef<HTMLDivElement>(null);
+
+  // Get URL parameters
+  const productId = searchParams.get('product');
+  const type = searchParams.get('type');
+  const sellerAddress = location.pathname.split('/chat/')[1]?.split('?')[0];
+
+  // Find the product if coming from product detail
+  const travelProduct = productId ? products.find(p => p.id === productId) : null;
 
   // Mock conversations data
   const [conversations, setConversations] = useState<Conversation[]>([
@@ -75,6 +90,33 @@ const Chat = () => {
       ]
     }
   ]);
+
+  // Create new conversation for travel request if needed
+  useEffect(() => {
+    if (travelProduct && sellerAddress && type === 'travel_request') {
+      const sellerName = sellerAddress.slice(0, 6) + '...' + sellerAddress.slice(-4);
+      const newConversation: Conversation = {
+        id: Date.now(),
+        name: sellerName,
+        lastMessage: `Seyahat talebi: ${travelProduct.name}`,
+        unread: 0,
+        avatar: sellerName.slice(0, 2).toUpperCase(),
+        messages: [
+          {
+            id: 1,
+            sender: 'other',
+            text: `Merhaba! ${travelProduct.name} seyahat talebim hakkında bilgi almak istiyorum.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ],
+        sellerAddress: sellerAddress,
+        productId: productId || undefined
+      };
+      
+      setConversations(prev => [newConversation, ...prev]);
+      setActiveConversation(newConversation.id);
+    }
+  }, [travelProduct, sellerAddress, type, productId]);
 
   // Scroll to bottom of messages when messages change
   useEffect(() => {
@@ -122,11 +164,38 @@ const Chat = () => {
 
   // Get the active conversation
   const activeChat = conversations.find(c => c.id === activeConversation);
+  const activeTravelProduct = activeChat?.productId ? products.find(p => p.id === activeChat.productId) : null;
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8 lg:py-12 pb-24 max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-extrabold mb-6">Messages</h1>
+        
+        {/* Travel Request Info Card */}
+        {activeTravelProduct && (
+          <Card className="mb-4 border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Plane className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-blue-800 dark:text-blue-200">Seyahat Talebi</h3>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-600" />
+                  <span className="text-blue-700 dark:text-blue-300">{activeTravelProduct.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <span className="text-blue-700 dark:text-blue-300">Tarih: {activeTravelProduct.estimatedDelivery}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-blue-600" />
+                  <span className="text-blue-700 dark:text-blue-300">Bütçe: {activeTravelProduct.price} XLM</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         <Card className="overflow-hidden flex flex-col h-[500px] shadow-xs">
           {/* Conversation List */}

@@ -15,6 +15,7 @@ const CreateProposal = () => {
     description: '',
     votingPeriod: '7' // Default 7 days
   });
+  const [error, setError] = useState<string | null>(null);
 
   // Available categories
   const categories = [
@@ -51,18 +52,19 @@ const CreateProposal = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    // In real app, this would create a proposal on the blockchain
-    console.log('Proposal data:', formData);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      setIsSubmitting(true);
+      // Add proposal logic here
       navigate('/proposals');
-    }, 1000);
+    } catch (error) {
+      console.error('Failed to create proposal:', error);
+      setError('Failed to create proposal. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Redirect if not connected

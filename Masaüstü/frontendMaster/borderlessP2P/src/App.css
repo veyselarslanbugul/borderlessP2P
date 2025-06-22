@@ -1,8 +1,24 @@
+/* Reset all constraints for full screen */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
 }
 
 .logo {
@@ -39,4 +55,43 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Full screen layout fixes */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Ensure proper viewport handling */
+* {
+  box-sizing: border-box;
+}
+
+/* Mobile viewport fixes */
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Desktop optimizations */
+@media screen and (min-width: 1024px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Force full width on all containers */
+.container {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+/* Override any max-width constraints */
+[class*="max-w-"] {
+  max-width: none !important;
 }
